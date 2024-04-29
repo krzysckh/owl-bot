@@ -128,6 +128,7 @@ Sec-WebSocket-Version: 13
            (start-heartbeats c (list->string payl) last-ack-s)))
 
         (when (and (not first?) (= op 1))
+          (print "sigma")
           (identify c))
 
         (when (= op 8)
