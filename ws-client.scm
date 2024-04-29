@@ -19,9 +19,14 @@
           (loop (- n (length l))
                 (append acc l))))))
 
-(define mask '(0 0 0 0)) ;; YEAHH
+(define mask '(21 37 42 11)) ;; YEAHH
+(define (mask-payload payload mask)
+  (map
+   (λ (n) (bxor (list-ref payload n)
+                (list-ref mask (modulo n 4))))
+   (iota 0 1 (length payload))))
+
 (define (ws-send c op payl)
-  (print "sending: " payl)
   (let* ((payload
           (cond
            ((bytevector? payl) (bytevector->list payl))
@@ -37,16 +42,21 @@
                         (list len)))
          (data (append
                 (list (bior #b10000000 op))
-                len-bytes
+                (list (bior #b10000000 (car len-bytes)))
+                (cdr len-bytes)
                 mask
-                payload)))
+                (mask-payload payload mask))))
+
+    (print "writing: " (list->string payload))
     (tls/write c data)))
 
-(define (authorize c)
+(define (identify c)
   (ws-send
-   c 2
+   c 1
    (json/encode
     `((op . 2)
+      (t . null)
+      (s . null)
       (d
        . ((token . ,token)
           (properties
@@ -54,7 +64,7 @@
               (browser . "owl-lisp")
               (device  . "owl-lisp")))
           (compress . #f)
-          (intents . 513)))))));;,(<< 1 15))))))))
+          (intents . ,(<< 1 15))))))))
 
 (define (asss str asc)
   (let loop ((asc asc))
@@ -69,10 +79,13 @@
          (d (cdr (asss "d" j)))
          (interval (cdr (asss "heartbeat_interval" d))))
     (let loop ()
-      (ws-send con 2 (string-append
-                      "{\"op\":10,\"d\":"
-                      (if (eqv? (last-ack-s) #f) "null" (last-ack-s))
-                      "}"))
+      (ws-send
+       con 1
+       (json/encode
+        `((op . 1)
+          (d . ,(if (null? (last-ack-s)) 'null (last-ack-s)))
+          (t . null)
+          (s . null))))
       (sleep interval)
       (loop))))
 
@@ -81,6 +94,7 @@
 (lambda (_)
   (let ((c (open-connection (sys/resolve-host hostname) 443))
         (last-ack-s (make-variable 'last-ack-s)))
+    (last-ack-s null)
     (tls/upgrade-connection c hostname)
     (tls/write c
 "GET /?v=6&format=json HTTP/1.1
@@ -106,12 +120,23 @@ Sec-WebSocket-Version: 13
              (payl (force-read c len)))
         (print "opcode: " op)
         (print "len: " len)
-        (print (list->string payl))
-        ;; (when first?
-        ;;   (thread 'heartbeat-thread (start-heartbeats c (list->string payl) last-ack-s)))
-        ;; (when (= op 8)
-        ;;   (authorize c)))
-        )
+        (print "payload: " (list->string payl))
+
+        (when first?
+          (thread
+           'heartbeat
+           (start-heartbeats c (list->string payl) last-ack-s)))
+
+        (when (and (not first?) (= op 1))
+          (identify c))
+
+        (when (= op 8)
+          (print "discord requested connection close")
+          (catch-thread 'heartbeat)
+          (catch-thread 'auth)
+          (tls/close c)
+          (exit-owl 1)))
+
       (print "ok loop")
       (loop #f))
 

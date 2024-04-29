@@ -86,7 +86,7 @@ prim_custom(int op, word a, word b, word c)
     return l;
   }
   case 1004: { /* close ptr */
-    tls_close(cptr(a));
+    tls_close(getctx(a));
   }
   }
   return IFALSE;
