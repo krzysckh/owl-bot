@@ -5,3 +5,8 @@ https://gitlab.com/owl-lisp/owl/-/merge_requests/11
 
   $ echo '"token"' > token
   $ make run
+
+references
+  * https://discord.com/developers/docs/
+  * https://www.honeybadger.io/blog/building-a-simple-websockets-server-from-scratch-in-ruby/
+  * https://www.rfc-editor.org/rfc/rfc6455
