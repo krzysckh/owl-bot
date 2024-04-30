@@ -73,17 +73,22 @@ prim_custom(int op, word a, word b, word c)
     n = tls_read(getctx(a), buf, N);
     if (n <= 0) {
       free(buf);
-      return INULL;
+      return IFALSE;
     }
 
-    buf[n] = 0;
-    word l = INULL;
-    for (n = n-1; n >= 0; --n) {
-      l = cons(onum(buf[n], 1), l);
-    }
-
+    word bv = mkbvec(buf, n);
     free(buf);
-    return l;
+    return bv;
+
+    /* buf[n] = 0; */
+    /* word l = INULL; */
+    /* for (n = n-1; n >= 0; --n) { */
+    /*   word v = onum(buf[n], 1); */
+    /*   l = cons(v, l); */
+    /* } */
+
+    /* free(buf); */
+    /* return l; */
   }
   case 1004: { /* close ptr */
     tls_close(getctx(a));

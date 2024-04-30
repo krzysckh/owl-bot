@@ -29,7 +29,8 @@
         (error "tls-write: unknown type " thing))))
 
     (define (read ptr n)
-      (sys-prim 1003 ptr n #f))
+      (let ((v (sys-prim 1003 ptr n #f)))
+        (if (self v) (bytevector->list v) '())))
 
     (define (close ptr)
       (sys-prim 1004 ptr #f #f))

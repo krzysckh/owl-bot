@@ -1,1 +1,7 @@
-wow
+a discord bot written in owl lisp.
+
+this patch on owl is required to run it:
+https://gitlab.com/owl-lisp/owl/-/merge_requests/11
+
+  $ echo '"token"' > token
+  $ make run
