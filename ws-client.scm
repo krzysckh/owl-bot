@@ -52,12 +52,6 @@ Content-length: " (number->string (string-length payl)) "
 
 " payl))
     (tls/close con)))
-  ;; "embeds": [{
-  ;;   "title": "Hello, Embed!",
-  ;;   "description": "This is an embedded message."
-  ;; }]
-;; }
-
 
 (define (ws-send c op payl)
   (let* ((payload
